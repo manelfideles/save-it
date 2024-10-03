@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "save-it"
+version = "0.1.0"
+description = "A simple expense tracker made with Streamlit"
+authors = ["Manuel Fideles"]
+readme = "README.md"
+packages = [{ include = "src" }]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+streamlit = "^1.39.0"
+pandas = "^2.2.3"
+plotly = "^5.24.1"
+supabase = "^2.8.1"
+reportlab = "^4.2.5"
+schedule = "^1.2.2"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
