@@ -59,3 +59,6 @@ class SupabaseClient:
 
     def delete_entry(self, entry_id: int):
         self.client.table("expenses").delete().eq("id", entry_id).execute()
+
+    def update_entry(self, entry_id, updated_data):
+        self.client.table("expenses").update(updated_data).eq("id", entry_id).execute()
