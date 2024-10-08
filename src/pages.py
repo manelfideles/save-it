@@ -36,22 +36,15 @@ def add_entry_page(client: SupabaseClient):
     categories = client.load_categories()
     entry_type = st.radio("Type", ["Expense", "Income"])
     title = st.text_input("Title")
-    category = st.selectbox("Category", [cat["name"] for cat in categories])
+    category = st.selectbox("Category", categories["name"].to_list())
     amount = st.number_input("Amount", min_value=0.0, format="%.2f")
     date = st.date_input("Date", format="DD/MM/YYYY")
-
     if st.button("Save Entry"):
         if all([title, category, amount, date]):
-            category_id = next(
-                cat["id"] for cat in categories if cat["name"] == category
+            category_id = int(
+                categories[categories["name"] == category]["id"].to_list()[0]
             )
-            response = client.save_entry(
-                entry_type,
-                title,
-                category_id,
-                amount,
-                date,
-            )
+            response = client.save_entry(entry_type, title, category_id, amount, date)
             if response.data:
                 st.success("Entry saved successfully!")
         else:

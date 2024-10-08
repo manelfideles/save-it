@@ -22,9 +22,10 @@ class SupabaseClient:
     def __init__(self, url=supabase_url, key=supabase_key) -> None:
         self.client: Client = create_client(url, key)
 
-    def load_categories(self) -> list[str]:
+    def load_categories(self) -> pd.DataFrame:
         response = self.client.table("categories").select("id,name").execute()
-        return [c for c in response.data]
+        categories = pd.DataFrame(response.data)
+        return categories
 
     def add_category(self, category: str):
         return self.client.table("categories").insert({"name": category}).execute()
@@ -33,7 +34,7 @@ class SupabaseClient:
         self,
         type: str,
         title: str,
-        category: str,
+        category_id: str,
         amount: float,
         date: datetime,
     ) -> APIResponse:
@@ -44,7 +45,7 @@ class SupabaseClient:
                 {
                     "type": type,
                     "title": title,
-                    "category": category,
+                    "category": category_id,
                     "amount": amount,
                     "date": date_str,
                 }

@@ -56,7 +56,7 @@ def sort_expenses_by(expenses: pd.DataFrame):
         )
     with col2:
         sort_order = st.radio(
-            "Sort order:", ("Ascending", "Descending"), horizontal=True
+            "Sort order:", ("Descending", "Ascending"), horizontal=True
         )
     ascending = sort_order == "Ascending"
     if sort_column == "amount":
@@ -100,10 +100,9 @@ def make_expenses_table(client: SupabaseClient, expenses: pd.DataFrame):
             if st.button("🗑️", key=f"delete_{row['id']}", help="Delete this entry"):
                 response = client.delete_entry(row["id"])
                 if response.data:
-                    st.success(f'Entry #{str(row['id'])} deleted.')
+                    st.rerun()
                 else:
                     st.error(f'Entry #{str(row['id'])} could not be deleted.')
-                st.rerun()
     return expenses
 
 def make_report(incomes: pd.DataFrame, expenses: pd.DataFrame):
