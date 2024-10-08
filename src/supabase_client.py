@@ -4,6 +4,7 @@ from functools import partial, wraps
 from typing import Callable, ParamSpec, TypeVar
 
 import pandas as pd
+import streamlit as st
 from dotenv import load_dotenv
 from postgrest.base_request_builder import APIResponse
 from pydantic import FilePath
@@ -65,7 +66,6 @@ class SupabaseClient:
             .eq("id", entry_id)
             .execute()
         )
-        print(response.data)
         return response
 
     def load_data(self) -> pd.DataFrame:
@@ -76,14 +76,20 @@ class SupabaseClient:
 
     def process_csv(self, csv_file: FilePath):
         df = pd.read_csv(csv_file)
+        categories = self.load_categories()
+        response = None
         for _, row in df.iterrows():
-            self.save_entry(
+            category_id = categories[categories["name"] == row["category"]][
+                "id"
+            ].to_list()[0]
+            response = self.save_entry(
                 row["type"],
                 row["title"],
-                row["category"],
+                category_id,
                 row["amount"],
                 datetime.strptime(row["date"], "%d-%m-%Y"),
             )
+        return response
 
 
 supabase_client = SupabaseClient()
