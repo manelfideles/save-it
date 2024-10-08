@@ -16,7 +16,6 @@ supabase = "^2.8.1"
 reportlab = "^4.2.5"
 schedule = "^1.2.2"
 python-dotenv = "^1.0.1"
-streamlit-modal = "^0.1.2"
 
 
 [build-system]

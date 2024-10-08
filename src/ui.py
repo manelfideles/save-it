@@ -3,58 +3,44 @@ from datetime import datetime, timedelta
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from streamlit_modal import Modal
 
-from supabase_client import SupabaseClient
+from supabase_client import SupabaseClient, with_supabase_client
 
 
-def expense_table(supabase_client: SupabaseClient, expenses: pd.DataFrame):
-    st.subheader("Filters")
-    categories = list(expenses["category"].unique())
-    col1, col2 = st.columns(2)
-    with col1:
-        # Date range filter
-        date_filter = st.selectbox(
-            "Date Range",
-            [
-                "All Time",
-                "Last 7 Days",
-                "Last 30 Days",
-                "Last 90 Days",
-                "Custom Range",
-            ],
+def filter_by_date_range(expenses: pd.DataFrame):
+    date_filter = st.selectbox(
+        "Date Range",
+        [
+            "All Time",
+            "Last 7 Days",
+            "Last 30 Days",
+            "Last 90 Days",
+            "Custom Range",
+        ],
+    )
+    if date_filter == "Custom Range":
+        start_date = st.date_input("Start Date")
+        end_date = st.date_input("End Date")
+        expenses = expenses[
+            (expenses["date"].dt.date >= start_date)
+            & (expenses["date"].dt.date <= end_date)
+        ]
+    elif date_filter != "All Time":
+        days = {"Last 7 Days": 7, "Last 30 Days": 30, "Last 90 Days": 90}
+        cutoff_date = (datetime.now() - timedelta(days=days[date_filter])).strftime(
+            "%Y-%m-%d"
         )
+        expenses = expenses[expenses["date"] >= cutoff_date]
+    return expenses
 
-        if date_filter == "Custom Range":
-            start_date = st.date_input("Start Date")
-            end_date = st.date_input("End Date")
-            expenses = expenses[
-                (expenses["date"].dt.date >= start_date)
-                & (expenses["date"].dt.date <= end_date)
-            ]
-        elif date_filter != "All Time":
-            days = {"Last 7 Days": 7, "Last 30 Days": 30, "Last 90 Days": 90}
-            cutoff_date = (datetime.now() - timedelta(days=days[date_filter])).strftime(
-                "%Y-%m-%d"
-            )
-            expenses = expenses[expenses["date"] >= cutoff_date]
-    with col2:
-        selected_categories = st.multiselect(
-            "Categories",
-            options=categories,
-            default=categories,  # All categories selected by default
-            help="Select one or more categories",
-        )
+def filter_by_category(expenses: pd.DataFrame, categories: list[str]):
+    with st.container():
+        selected_categories = st.multiselect("Categories", categories, default=None)
         if selected_categories:
             expenses = expenses[expenses["category"].isin(selected_categories)]
+        return expenses
 
-    search_term = st.text_input("Search entries", "")
-    if search_term:
-        expenses = expenses[
-            expenses["title"].str.contains(search_term, case=False)
-            | expenses["category"].str.contains(search_term, case=False)
-        ]
-
+def sort_expenses_by(expenses: pd.DataFrame):
     col1, col2 = st.columns(2)
     with col1:
         sort_column = st.selectbox(
@@ -72,7 +58,6 @@ def expense_table(supabase_client: SupabaseClient, expenses: pd.DataFrame):
         sort_order = st.radio(
             "Sort order:", ("Ascending", "Descending"), horizontal=True
         )
-
     ascending = sort_order == "Ascending"
     if sort_column == "amount":
         expenses = expenses.sort_values("amount", ascending=ascending)
@@ -80,66 +65,48 @@ def expense_table(supabase_client: SupabaseClient, expenses: pd.DataFrame):
         expenses = expenses.sort_values("date", ascending=ascending)
     else:
         expenses = expenses.sort_values(sort_column, ascending=ascending)
-
-    for _, row in expenses.iterrows():
-        with st.expander(
-            f"{row['title']} - {row['formatted_amount']} ({row['formatted_date']})"
-        ):
-            col1, col2, col3 = st.columns([3, 1, 1])
-            with col1:
-                st.write(f"**Category:** {row['category']}")
-                st.write(f"**Type:** {row['type']}")
-            with col2:
-                if st.button("Edit 📝", key=f"edit_{row['id']}"):
-                    edit_modal = Modal("Edit Entry", key=f"edit_modal_{row['id']}")
-                    with edit_modal.container():
-                        edited_title = st.text_input("Title", value=row["title"])
-                        edited_amount = st.number_input(
-                            "Amount", value=float(row["amount"])
-                        )
-                        edited_category = st.selectbox(
-                            "Category",
-                            categories[1:],
-                            index=categories[1:].index(row["category"]),
-                        )
-                        edited_type = st.selectbox(
-                            "Type",
-                            ["Income", "Expense"],
-                            index=0 if row["type"] == "1" else 1,
-                        )
-                        edited_date = st.date_input("Date", value=row["date"])
-
-                        if st.button("Save Changes"):
-                            updated_data = {
-                                "title": edited_title,
-                                "amount": edited_amount,
-                                "category": categories.index(edited_category),
-                                "type": "1" if edited_type == "Income" else "-1",
-                                "date": edited_date.strftime("%Y-%d-%m"),
-                            }
-                            supabase_client.update_entry(row["id"], updated_data)
-                            st.success("Entry updated successfully!")
-                            st.experimental_rerun()
-            with col3:
-                if st.button("Delete 🗑️", key=f"delete_{row['id']}"):
-                    confirm_modal = Modal(
-                        "Confirm Deletion", key=f"confirm_modal_{row['id']}"
-                    )
-                    with confirm_modal.container():
-                        st.write("Are you sure you want to delete this entry?")
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            if st.button("Yes, delete"):
-                                supabase_client.delete_entry(row["id"])
-                                st.success("Entry deleted successfully!")
-                                st.rerun()
-                        with col2:
-                            if st.button("Cancel"):
-                                confirm_modal.close()
     return expenses
 
+def filter_expenses(expenses: pd.DataFrame, categories: list[str]) -> pd.DataFrame:
+    col1, col2 = st.columns(2)
+    with col1:
+        expenses = filter_by_date_range(expenses)
+    with col2:
+        expenses = filter_by_category(expenses, categories)
+    expenses = sort_expenses_by(expenses)
+    return expenses
 
-def report(incomes: pd.DataFrame, expenses: pd.DataFrame):
+@with_supabase_client()
+def make_expenses_table(client: SupabaseClient, expenses: pd.DataFrame):
+    def _center_align_row_html(row) -> str:
+        style = 'margin-top: 5px; width: 100%;'
+        return f"<div style='{style}'>{row}</div>"
+
+    categories = list(expenses["category"].unique())
+    expenses = filter_expenses(expenses, categories)
+
+    for _, row in expenses.iterrows():
+        col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 1, 1])
+
+        with col1:
+            st.markdown(_center_align_row_html(row["title"]), unsafe_allow_html=True)
+        with col2:
+            st.markdown(_center_align_row_html(row["category"]), unsafe_allow_html=True)
+        with col3:
+            st.markdown(_center_align_row_html(row["formatted_date"]), unsafe_allow_html=True)
+        with col4:
+            st.markdown(_center_align_row_html(row["formatted_amount"]), unsafe_allow_html=True)
+        with col5:
+            if st.button("🗑️", key=f"delete_{row['id']}", help="Delete this entry"):
+                response = client.delete_entry(row["id"])
+                if response.data:
+                    st.success(f'Entry #{str(row['id'])} deleted.')
+                else:
+                    st.error(f'Entry #{str(row['id'])} could not be deleted.')
+                st.rerun()
+    return expenses
+
+def make_report(incomes: pd.DataFrame, expenses: pd.DataFrame):
     if not expenses.empty:
         incomes["date"] = pd.to_datetime(incomes["date"], format="%Y-%d-%m")
         expenses["date"] = pd.to_datetime(expenses["date"], format="%Y-%d-%m")
@@ -163,7 +130,6 @@ def report(incomes: pd.DataFrame, expenses: pd.DataFrame):
         st.plotly_chart(fig)
     else:
         st.info("No data available for reporting")
-
 
 def calculate_stats(incomes: pd.DataFrame, expenses: pd.DataFrame, current_month):
     current_month_incomes = incomes[incomes["date"] >= current_month]
@@ -194,7 +160,6 @@ def calculate_stats(incomes: pd.DataFrame, expenses: pd.DataFrame, current_month
         "savings": savings,
         "prev_savings": prev_savings,
     }
-
 
 def render_stats(stats: dict):
     col1, col2, col3 = st.columns(3)

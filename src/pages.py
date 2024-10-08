@@ -1,33 +1,39 @@
 import pandas as pd
 import streamlit as st
 
-from supabase_client import SupabaseClient
-from ui import expense_table, report
-
-supabase_client = SupabaseClient()
+from supabase_client import SupabaseClient, with_supabase_client
+from ui import make_expenses_table, make_report
 
 
-def expenses_page():
-    st.header("My Expenses")
-    data = supabase_client.load_data()
-    cols = ["type", "id", "title", "category", "amount", "date"]
+def format_expenses_df(
+    data: pd.DataFrame,
+    cols: list[str] = ["type", "id", "title", "category", "amount", "date"],
+) -> pd.DataFrame:
     expenses = data[data["type"] == "Expense"][cols]
-
     expenses["date"] = pd.to_datetime(expenses["date"], format="%Y-%d-%m")
     expenses["formatted_date"] = expenses["date"].dt.strftime("%Y-%d-%m")
     expenses["formatted_amount"] = expenses["amount"].apply(lambda x: f"€{x:.2f}")
+    return expenses
 
-    table_col, report_col = st.columns(2)
+
+@with_supabase_client()
+def expenses_page(client: SupabaseClient):
+    st.header("My Expenses")
+    data = client.load_data()
+    expenses = format_expenses_df(data)
+
+    table_col, report_col = st.columns([0.4, 0.6])
     with table_col:
-        expenses = expense_table(supabase_client, expenses)
+        expenses = make_expenses_table(expenses)
     with report_col:
         incomes = data[data["type"] == "Income"]
-        report(incomes, expenses)
+        make_report(incomes, expenses)
 
 
-def add_entry_page():
+@with_supabase_client()
+def add_entry_page(client: SupabaseClient):
     st.header("Add New Entry")
-    categories = supabase_client.load_categories()
+    categories = client.load_categories()
     entry_type = st.radio("Type", ["Expense", "Income"])
     title = st.text_input("Title")
     category = st.selectbox("Category", [cat["name"] for cat in categories])
@@ -39,21 +45,23 @@ def add_entry_page():
             category_id = next(
                 cat["id"] for cat in categories if cat["name"] == category
             )
-            supabase_client.save_entry(
+            response = client.save_entry(
                 entry_type,
                 title,
                 category_id,
                 amount,
                 date,
             )
-            st.success("Entry saved successfully!")
+            if response.data:
+                st.success("Entry saved successfully!")
         else:
             st.error("Please fill all fields")
 
 
-def upload_csv_page():
+@with_supabase_client()
+def upload_csv_page(client: SupabaseClient):
     st.header("Upload CSV File")
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
     if uploaded_file is not None:
-        supabase_client.process_csv(uploaded_file)
+        client.process_csv(uploaded_file)
         st.success("CSV processed successfully!")
