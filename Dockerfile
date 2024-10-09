@@ -1,6 +1,5 @@
 FROM python:3.11.5-slim-bookworm
 
-# Install curl and set up Poetry
 RUN apt-get update && apt-get install -y curl
 ENV POETRY_HOME=/opt/poetry
 RUN curl -sSL https://install.python-poetry.org | python3 - 
