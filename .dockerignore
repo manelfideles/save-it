@@ -1,7 +1,11 @@
 .env.example
 .venv
-__pycache__
-poetry.toml
 .gitignore
+
 Dockerfile
 docker-compose.yml
+__pycache__
+
+poetry.toml
+poetry.lock
+pyproject.toml
