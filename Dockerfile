@@ -4,7 +4,8 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN pip --timeout=1000 install -r requirements.txt
+# 3h timeout
+RUN pip --timeout=10800 install -r requirements.txt
 
 COPY . .
 
