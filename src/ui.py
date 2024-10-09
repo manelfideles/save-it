@@ -33,12 +33,14 @@ def filter_by_date_range(expenses: pd.DataFrame):
         expenses = expenses[expenses["date"] >= cutoff_date]
     return expenses
 
+
 def filter_by_category(expenses: pd.DataFrame, categories: list[str]):
     with st.container():
         selected_categories = st.multiselect("Categories", categories, default=None)
         if selected_categories:
             expenses = expenses[expenses["category"].isin(selected_categories)]
         return expenses
+
 
 def sort_expenses_by(expenses: pd.DataFrame):
     col1, col2 = st.columns(2)
@@ -67,6 +69,7 @@ def sort_expenses_by(expenses: pd.DataFrame):
         expenses = expenses.sort_values(sort_column, ascending=ascending)
     return expenses
 
+
 def filter_expenses(expenses: pd.DataFrame, categories: list[str]) -> pd.DataFrame:
     col1, col2 = st.columns(2)
     with col1:
@@ -76,10 +79,11 @@ def filter_expenses(expenses: pd.DataFrame, categories: list[str]) -> pd.DataFra
     expenses = sort_expenses_by(expenses)
     return expenses
 
+
 @with_supabase_client()
 def make_expenses_table(client: SupabaseClient, expenses: pd.DataFrame):
     def _center_align_row_html(row) -> str:
-        style = 'margin-top: 5px; width: 100%;'
+        style = "margin-top: 5px; width: 100%;"
         return f"<div style='{style}'>{row}</div>"
 
     categories = list(expenses["category"].unique())
@@ -93,17 +97,22 @@ def make_expenses_table(client: SupabaseClient, expenses: pd.DataFrame):
         with col2:
             st.markdown(_center_align_row_html(row["category"]), unsafe_allow_html=True)
         with col3:
-            st.markdown(_center_align_row_html(row["formatted_date"]), unsafe_allow_html=True)
+            st.markdown(
+                _center_align_row_html(row["formatted_date"]), unsafe_allow_html=True
+            )
         with col4:
-            st.markdown(_center_align_row_html(row["formatted_amount"]), unsafe_allow_html=True)
+            st.markdown(
+                _center_align_row_html(row["formatted_amount"]), unsafe_allow_html=True
+            )
         with col5:
             if st.button("🗑️", key=f"delete_{row['id']}", help="Delete this entry"):
                 response = client.delete_entry(row["id"])
                 if response.data:
                     st.rerun()
                 else:
-                    st.error(f'Entry #{str(row['id'])} could not be deleted.')
+                    st.error(f"Entry #{str(row['id'])} could not be deleted.")
     return expenses
+
 
 def make_report(incomes: pd.DataFrame, expenses: pd.DataFrame):
     if not expenses.empty:
@@ -129,6 +138,7 @@ def make_report(incomes: pd.DataFrame, expenses: pd.DataFrame):
         st.plotly_chart(fig)
     else:
         st.info("No data available for reporting")
+
 
 def calculate_stats(incomes: pd.DataFrame, expenses: pd.DataFrame, current_month):
     current_month_incomes = incomes[incomes["date"] >= current_month]
@@ -159,6 +169,7 @@ def calculate_stats(incomes: pd.DataFrame, expenses: pd.DataFrame, current_month
         "savings": savings,
         "prev_savings": prev_savings,
     }
+
 
 def render_stats(stats: dict):
     col1, col2, col3 = st.columns(3)

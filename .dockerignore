@@ -1,0 +1,7 @@
+.env.example
+.venv
+__pycache__
+poetry.toml
+.gitignore
+Dockerfile
+docker-compose.yml
