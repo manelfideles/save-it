@@ -3,7 +3,7 @@ version: '3.8'
 services:
   web:
     image: manelfideles/save-it:latest
-    platform: linux/amd64
+    platform: linux/amd64/v8
     ports:
       - "8501:8501"
     volumes:
