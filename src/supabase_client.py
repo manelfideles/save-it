@@ -78,16 +78,19 @@ class SupabaseClient:
         df = pd.read_csv(csv_file)
         categories = self.load_categories()
         response = None
+        print(df)
+        df["date"] = pd.to_datetime(df["date"], format="%d-%m-%Y")
         for _, row in df.iterrows():
             category_id = categories[categories["name"] == row["category"]][
                 "id"
             ].to_list()[0]
+            print(">>> ", datetime.strftime(row["date"], "%d-%m-%Y"))
             response = self.save_entry(
                 row["type"],
                 row["title"],
                 category_id,
                 row["amount"],
-                datetime.strptime(row["date"], "%d-%m-%Y"),
+                row["date"],
             )
         return response
 
