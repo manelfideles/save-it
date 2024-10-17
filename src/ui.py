@@ -97,9 +97,7 @@ def make_expenses_table(client: SupabaseClient, expenses: pd.DataFrame):
         with col2:
             st.markdown(_center_align_row_html(row["category"]), unsafe_allow_html=True)
         with col3:
-            st.markdown(
-                _center_align_row_html(row["formatted_date"]), unsafe_allow_html=True
-            )
+            st.markdown(_center_align_row_html(row["date"]), unsafe_allow_html=True)
         with col4:
             st.markdown(
                 _center_align_row_html(row["formatted_amount"]), unsafe_allow_html=True
@@ -116,8 +114,8 @@ def make_expenses_table(client: SupabaseClient, expenses: pd.DataFrame):
 
 def make_report(incomes: pd.DataFrame, expenses: pd.DataFrame):
     if not expenses.empty:
-        incomes["date"] = pd.to_datetime(incomes["date"], format="%Y-%d-%m")
-        expenses["date"] = pd.to_datetime(expenses["date"], format="%Y-%d-%m")
+        incomes.loc[:, "date"] = pd.to_datetime(incomes["date"], format="%Y-%m-%d")
+        expenses.loc[:, "date"] = pd.to_datetime(expenses["date"], format="%Y-%m-%d")
         current_month = datetime.now().replace(day=1).strftime("%Y-%d-%m")
         current_month = pd.to_datetime(current_month, format="%Y-%d-%m")
         stats = calculate_stats(incomes, expenses, current_month)

@@ -4,11 +4,12 @@ from functools import partial, wraps
 from typing import Callable, ParamSpec, TypeVar
 
 import pandas as pd
-import streamlit as st
 from dotenv import load_dotenv
 from postgrest.base_request_builder import APIResponse
 from pydantic import FilePath
 from supabase import Client, create_client
+
+from utils import format_expenses_df
 
 load_dotenv()
 
@@ -37,9 +38,13 @@ class SupabaseClient:
         title: str,
         category_id: str,
         amount: float,
-        date: datetime,
+        date: str | datetime,
     ) -> APIResponse:
-        date_str = date.strftime("%d-%m-%Y")
+        try:
+            date_str = date.isoformat()
+        except AttributeError:
+            date_str = date
+
         response = (
             self.client.table("expenses")
             .insert(
@@ -72,19 +77,18 @@ class SupabaseClient:
         response: APIResponse = self.client.rpc(
             "get_expenses_with_categories"
         ).execute()
-        return pd.DataFrame(response.data)
+        data = pd.DataFrame(response.data)
+        formatted_data = format_expenses_df(data)
+        return formatted_data
 
     def process_csv(self, csv_file: FilePath):
         df = pd.read_csv(csv_file)
         categories = self.load_categories()
         response = None
-        print(df)
-        df["date"] = pd.to_datetime(df["date"], format="%d-%m-%Y")
         for _, row in df.iterrows():
             category_id = categories[categories["name"] == row["category"]][
                 "id"
             ].to_list()[0]
-            print(">>> ", datetime.strftime(row["date"], "%d-%m-%Y"))
             response = self.save_entry(
                 row["type"],
                 row["title"],

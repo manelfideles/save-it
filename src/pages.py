@@ -5,31 +5,23 @@ import streamlit as st
 
 from supabase_client import SupabaseClient, with_supabase_client
 from ui import make_expenses_table, make_report
-
-
-def format_expenses_df(
-    data: pd.DataFrame,
-    cols: list[str] = ["type", "id", "title", "category", "amount", "date"],
-) -> pd.DataFrame:
-    expenses = data[data["type"] == "Expense"][cols]
-    expenses["date"] = pd.to_datetime(expenses["date"], format="%Y-%d-%m")
-    expenses["formatted_date"] = expenses["date"].dt.strftime("%Y-%d-%m")
-    expenses["formatted_amount"] = expenses["amount"].apply(lambda x: f"€{x:.2f}")
-    return expenses
+from utils import format_expenses_df
 
 
 @with_supabase_client()
 def expenses_page(client: SupabaseClient):
     st.header("My Expenses")
     data = client.load_data()
-    expenses = format_expenses_df(data)
-
-    table_col, report_col = st.columns([0.4, 0.6])
-    with table_col:
-        expenses = make_expenses_table(expenses)
-    with report_col:
+    if not data.empty:
+        expenses = data[data["type"] == "Expense"]
         incomes = data[data["type"] == "Income"]
-        make_report(incomes, expenses)
+        table_col, report_col = st.columns([0.4, 0.6])
+        with table_col:
+            expenses = make_expenses_table(expenses)
+        with report_col:
+            make_report(incomes, expenses)
+    else:
+        st.info("No data to display.")
 
 
 @with_supabase_client()
@@ -40,7 +32,7 @@ def add_entry_page(client: SupabaseClient):
     title = st.text_input("Title")
     category = st.selectbox("Category", categories["name"].to_list())
     amount = st.number_input("Amount", min_value=0.0, format="%.2f")
-    date = st.date_input("Date", format="DD/MM/YYYY")
+    date = st.date_input("Date", format="YYYY/MM/DD")
     if st.button("Save Entry"):
         if all([title, category, amount, date]):
             category_id = int(
