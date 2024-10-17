@@ -14,4 +14,4 @@ EXPOSE 8501
 RUN echo "Container 'save.it' is live!"
 
 # Explicitly set the server address
-CMD ["streamlit", "run", "src/main.py", "--server.address=0.0.0.0", "--server.port=8501"]
+CMD ["streamlit", "run", "src/main.py"]
