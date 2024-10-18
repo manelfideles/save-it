@@ -16,6 +16,7 @@ supabase = "^2.8.1"
 reportlab = "^4.2.5"
 schedule = "^1.2.2"
 python-dotenv = "^1.0.1"
+pyjwt = "^2.9.0"
 
 
 [build-system]

@@ -1,8 +1,6 @@
 services:
   web:
     image: manelfideles/save-it:latest
-    # ports:
-    #   - "8501:8501"
     volumes:
       - .:/app
     environment:
