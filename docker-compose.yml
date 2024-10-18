@@ -1,10 +1,11 @@
 services:
   web:
     image: manelfideles/save-it:latest
-    ports:
-      - "8501:8501"
+    # ports:
+    #   - "8501:8501"
     volumes:
       - .:/app
     environment:
       - PYTHONUNBUFFERED=1
+    network_mode: "host"
     restart: unless-stopped
