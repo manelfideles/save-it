@@ -5,7 +5,6 @@ import streamlit as st
 
 from supabase_client import SupabaseClient, with_supabase_client
 from ui import make_expenses_table, make_report
-from utils import format_expenses_df
 
 
 @with_supabase_client()

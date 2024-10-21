@@ -89,9 +89,9 @@ def make_expenses_table(client: SupabaseClient, expenses: pd.DataFrame):
     categories = list(expenses["category"].unique())
     expenses = filter_expenses(expenses, categories)
 
+    expenses["date"] = expenses["date"].dt.date
     for _, row in expenses.iterrows():
         col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 1, 1])
-
         with col1:
             st.markdown(_center_align_row_html(row["title"]), unsafe_allow_html=True)
         with col2:
