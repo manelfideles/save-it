@@ -1,6 +1,3 @@
-from time import sleep
-
-import pandas as pd
 import streamlit as st
 
 from supabase_client import SupabaseClient, with_supabase_client

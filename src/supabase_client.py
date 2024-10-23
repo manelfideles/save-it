@@ -94,7 +94,7 @@ class SupabaseClient:
                 row["title"],
                 category_id,
                 row["amount"],
-                row["date"],
+                row["date"],  # YYYY/MM/DD
             )
         return response
 

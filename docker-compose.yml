@@ -6,4 +6,4 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     network_mode: "host"
-    restart: unless-stopped
+    restart: always
